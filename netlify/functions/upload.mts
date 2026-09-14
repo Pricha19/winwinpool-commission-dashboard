@@ -70,10 +70,7 @@ export default async (req: Request, context: Context) => {
     }
   }
 
-  const incomingSalesNames = (body?.salesNames && typeof body.salesNames === "object" ? body.salesNames : {}) as Record
-    string,
-    string
-  >;
+  const incomingSalesNames = (body?.salesNames && typeof body.salesNames === "object" ? body.salesNames : {}) as Record<string, string>;
 
   try {
     const store = getStore("dashboard");
