@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>WinWinPool Commission Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --accent:#0B7285;
+    --accent-strong:#075868;
+    --ok:#2F9E44;
+    --warn:#E8A100;
+    --bad:#E03131;
+    --neutral:#868E96;
+    --cat-service:#7048E8;
+    --bg:#F4F6F7;
+    --surface:#FFFFFF;
+    --surface-2:#EEF2F3;
+    --text:#1B2528;
+    --text-soft:#5C6B70;
+    --border:#DCE4E6;
+    --shadow: 0 1px 2px rgba(15,40,45,0.06), 0 4px 14px rgba(15,40,45,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --accent:#43C6D4;
+      --accent-strong:#6FDCE7;
+      --ok:#4FCE5D;
+      --warn:#F5C242;
+      --bad:#FF6B6B;
+      --neutral:#9BA5A8;
+      --cat-service:#A78BFA;
+      --bg:#0F1719;
+      --surface:#182226;
+      --surface-2:#1F2C30;
+      --text:#EAF1F2;
+      --text-soft:#9AABAF;
+      --border:#2A383D;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --accent:#43C6D4; --accent-strong:#6FDCE7; --ok:#4FCE5D; --warn:#F5C242; --bad:#FF6B6B;
+    --neutral:#9BA5A8; --cat-service:#A78BFA; --bg:#0F1719; --surface:#182226; --surface-2:#1F2C30;
+    --text:#EAF1F2; --text-soft:#9AABAF; --border:#2A383D;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Noto Sans Thai","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:48px;
+  }
+  h1,h2,h3,.kanit{font-family:"Kanit","Noto Sans Thai",sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:16px;}
+  @media (min-width:720px){ .wrap{padding:28px 24px;} }
+
+  /* header */
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+  .logo{
+    width:44px;height:44px;border-radius:12px;flex:none;
+    background:linear-gradient(155deg,var(--accent),var(--accent-strong));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:"Kanit",sans-serif;font-weight:700;font-size:22px;
+    box-shadow:var(--shadow);
+  }
+  .title-block{flex:1;min-width:200px;}
+  .title-block h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.2px;}
+  .title-block p{margin:2px 0 0;font-size:13px;color:var(--text-soft);}
+  .meta-pill{
+    font-size:12px;color:var(--text-soft);background:var(--surface);
+    border:1px solid var(--border);border-radius:999px;padding:6px 12px;
+    box-shadow:var(--shadow); white-space:nowrap;
+  }
+  .meta-pill.err{color:var(--bad);border-color:var(--bad);}
+
+  /* cards */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--shadow); padding:16px; margin-bottom:16px;
+  }
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--text-soft);font-weight:600;}
+
+  /* filter bar */
+  .filter-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .filter-row .grow{flex:1;min-width:180px;}
+  .btn{
+    font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid var(--border);background:var(--surface-2);color:var(--text);
+    border-radius:10px;padding:9px 14px;transition:background .15s ease;
+  }
+  .btn:hover{background:var(--border);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.primary:hover{background:var(--accent-strong);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn.icon{padding:9px 11px;}
+  input[type="month"], input[type="text"], select{
+    font-family:inherit;font-size:13px;color:var(--text);background:var(--surface-2);
+    border:1px solid var(--border);border-radius:10px;padding:9px 10px;width:100%;
+  }
+  .date-range{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .date-range span.to-label{font-size:12px;color:var(--text-soft);padding:0 2px;}
+  .filter-summary{font-size:12.5px;color:var(--text-soft);margin-left:auto;text-align:right;}
+
+  /* summary cards */
+  .summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;}
+  @media (min-width:640px){ .summary-grid{grid-template-columns:repeat(4,1fr);} }
+  .sum-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--shadow); padding:14px; position:relative; overflow:hidden;
+  }
+  .sum-card .label{font-size:12px;color:var(--text-soft);font-weight:600;margin-bottom:6px;}
+  .sum-card .value{font-family:"Kanit",sans-serif;font-size:20px;font-weight:700;line-height:1.2;}
+  .sum-card .bar-track{height:6px;border-radius:4px;background:var(--surface-2);margin-top:10px;overflow:hidden;}
+  .sum-card .bar-fill{height:100%;border-radius:4px;}
+  .sum-card.import .bar-fill,.sum-card.import .value{color:var(--accent);}
+  .sum-card.import .bar-fill{background:var(--accent);}
+  .sum-card.domestic .bar-fill{background:var(--ok);}
+  .sum-card.domestic .value{color:var(--ok);}
+  .sum-card.service .bar-fill{background:var(--cat-service);}
+  .sum-card.service .value{color:var(--cat-service);}
+  .sum-card.grand .bar-fill{background:var(--text);}
+  .sum-card.grand{background:linear-gradient(155deg,var(--accent),var(--accent-strong));}
+  .sum-card.grand .label,.sum-card.grand .value{color:#fff;}
+  .sum-card.grand .bar-track{background:rgba(255,255,255,.28);}
+  .sum-card.grand .bar-fill{background:#fff;}
+
+  /* upload */
+  details.upload-box summary{cursor:pointer;font-family:"Kanit",sans-serif;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px;}
+  details.upload-box summary::-webkit-details-marker{display:none;}
+  details.upload-box summary::before{content:"▸";display:inline-block;transition:transform .15s;color:var(--accent);}
+  details.upload-box[open] summary::before{transform:rotate(90deg);}
+  .dropzones{display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0;}
+  @media (min-width:640px){ .dropzones{grid-template-columns:repeat(3,1fr);} }
+  .dropzone{
+    border:2px dashed var(--border);border-radius:12px;padding:16px 12px;text-align:center;
+    cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface-2);
+    min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  }
+  .dropzone.dragover{border-color:var(--accent);background:rgba(11,114,133,.08);}
+  .dropzone.filled{border-style:solid;border-color:var(--ok);}
+  .dropzone .dz-title{font-weight:700;font-size:13px;}
+  .dropzone .dz-req{font-size:11px;color:var(--bad);}
+  .dropzone .dz-opt{font-size:11px;color:var(--text-soft);}
+  .dropzone .dz-file{font-size:12px;color:var(--text-soft);word-break:break-all;padding:0 4px;}
+  .dropzone input{display:none;}
+  .upload-note{font-size:12px;color:var(--text-soft);line-height:1.6;margin-top:6px;}
+  .upload-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+  .msg{border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;}
+  .msg.error{background:rgba(224,49,49,.1);color:var(--bad);border:1px solid rgba(224,49,49,.3);}
+  .msg.success{background:rgba(47,158,68,.1);color:var(--ok);border:1px solid rgba(47,158,68,.3);}
+
+  /* quality chips */
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    font-size:12px;border-radius:999px;padding:6px 12px;background:var(--surface-2);
+    border:1px solid var(--border);white-space:nowrap;
+  }
+  .chip b{font-family:"Kanit",sans-serif;}
+  .chip.ok{color:var(--ok);}
+  .chip.warn{color:var(--warn);}
+  .chip.bad{color:var(--bad);}
+  .chip.neutral{color:var(--text-soft);}
+  .dep-line{font-size:12.5px;color:var(--text-soft);margin-top:10px;}
+
+  /* drill-down table */
+  .table-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .table-controls .grow{flex:1;min-width:160px;}
+  .checkbox-row{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-soft);white-space:nowrap;}
+  .tree{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .row{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:default;gap:10px;}
+  .row:last-child{border-bottom:none;}
+  .row .caret{width:16px;flex:none;font-size:11px;color:var(--text-soft);transition:transform .15s;}
+  .row.open > .caret{transform:rotate(90deg);}
+  .row.branch{background:var(--surface-2);cursor:pointer;font-weight:700;font-family:"Kanit",sans-serif;}
+  .row.category{background:var(--surface);cursor:pointer;font-weight:600;padding-left:30px;}
+  .row.person{padding-left:48px;font-size:13px;}
+  .row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .row .amt{font-family:"Kanit",sans-serif;font-weight:600;white-space:nowrap;}
+  .row .pct{font-size:11.5px;color:var(--text-soft);width:48px;text-align:right;flex:none;}
+  .cat-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .cat-dot.import{background:var(--accent);}
+  .cat-dot.domestic{background:var(--ok);}
+  .cat-dot.service{background:var(--cat-service);}
+  .group-body{display:none;}
+  .group-body.show{display:block;}
+
+  .empty-state{text-align:center;padding:36px 16px;color:var(--text-soft);}
+  .empty-state .big{font-size:32px;margin-bottom:8px;}
+  .footer-note{text-align:center;font-size:11.5px;color:var(--text-soft);margin-top:24px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="logo">W</div>
+    <div class="title-block">
+      <h1>WinWinPool Commission</h1>
+      <p>แดชบอร์ดคำนวณค่าคอมมิชชั่นฝ่ายขาย แยกตามหมวดสินค้านำเข้าเอง / ในประเทศ / บริการ</p>
+    </div>
+    <div class="meta-pill" id="metaPill">กำลังเชื่อมต่อ…</div>
+  </div>
+
+  <!-- filter bar -->
+  <div class="card" id="filterCard">
+    <div class="filter-row">
+      <div class="date-range">
+        <button class="btn icon" id="prevBtn" title="ก่อนหน้า">‹</button>
+        <input type="month" id="fromMonth">
+        <span class="to-label">ถึง</span>
+        <input type="month" id="toMonth">
+        <button class="btn icon" id="nextBtn" title="ถัดไป">›</button>
+        <button class="btn" id="thisMonthBtn">เดือนนี้</button>
+        <button class="btn" id="allTimeBtn">ทั้งหมด</button>
+      </div>
+      <div class="grow" style="max-width:260px;">
+        <select id="employeeSelect"><option value="">ทุกคน</option></select>
+      </div>
+      <div class="filter-summary" id="filterSummary"></div>
+    </div>
+  </div>
+
+  <!-- summary cards -->
+  <div class="summary-grid" id="summaryGrid" style="display:none;">
+    <div class="sum-card import">
+      <div class="label">สินค้านำเข้าเอง</div>
+      <div class="value" id="valImport">฿0</div>
+      <div class="bar-track"><div class="bar-fill" id="barImport" style="width:0%;"></div></div>
+    </div>
+    <div class="sum-card domestic">
+      <div class="label">สินค้าซื้อมาขาย-ไป (ในประเทศ)</div>
+      <div class="value" id="valDomestic">฿0</div>
+      <div class="bar-track"><div class="bar-fill" id="barDomestic" style="width:0%;"></div></div>
+    </div>
+    <div class="sum-card service">
+      <div class="label">งานซ่อมและค่าบริการอื่นๆ</div>
+      <div class="value" id="valService">฿0</div>
+      <div class="bar-track"><div class="bar-fill" id="barService" style="width:0%;"></div></div>
+    </div>
+    <div class="sum-card grand">
+      <div class="label">ยอดขายรวมทั้งหมด</div>
+      <div class="value" id="valGrand">฿0</div>
+      <div class="bar-track"><div class="bar-fill" id="barGrand" style="width:100%;"></div></div>
+    </div>
+  </div>
+
+  <!-- empty state -->
+  <div class="card" id="emptyStateCard" style="display:none;">
+    <div class="empty-state">
+      <div class="big" id="emptyIcon">📊</div>
+      <div id="emptyText">ยังไม่มีข้อมูล</div>
+    </div>
+  </div>
+
+  <!-- upload box -->
+  <div class="card">
+    <details class="upload-box" id="uploadBox">
+      <summary>อัปโหลดไฟล์ยอดขาย</summary>
+      <div class="dropzones">
+        <label class="dropzone" id="dzInv" data-kind="INV">
+          <div class="dz-title">INV — ใบแจ้งหนี้</div>
+          <div class="dz-req">บังคับ</div>
+          <div class="dz-file" id="dzInvFile">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก</div>
+          <input type="file" accept=".xlsx,.xls" id="fileInv">
+        </label>
+        <label class="dropzone" id="dzTax" data-kind="TAX">
+          <div class="dz-title">TAX — ภาษีขาย</div>
+          <div class="dz-req">บังคับ</div>
+          <div class="dz-file" id="dzTaxFile">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก</div>
+          <input type="file" accept=".xlsx,.xls" id="fileTax">
+        </label>
+        <label class="dropzone" id="dzDep" data-kind="DEP">
+          <div class="dz-title">DEP — ใบสั่งขาย/มัดจำ</div>
+          <div class="dz-opt">ไม่บังคับ</div>
+          <div class="dz-file" id="dzDepFile">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก</div>
+          <input type="file" accept=".xlsx,.xls" id="fileDep">
+        </label>
+      </div>
+      <div class="filter-row">
+        <div class="grow" style="max-width:280px;">
+          <input type="text" id="uploaderName" placeholder="ชื่อผู้อัปโหลด (ไม่บังคับ)">
+        </div>
+        <div class="upload-actions">
+          <button class="btn primary" id="processBtn" disabled>ประมวลผล &amp; เผยแพร่ให้ทุกคนเห็น</button>
+          <span id="processingLabel" style="font-size:12.5px;color:var(--text-soft);display:none;">กำลังประมวลผล…</span>
+        </div>
+      </div>
+      <p class="upload-note">
+        ไฟล์ประมวลผลในเครื่องผู้ใช้เอง ไม่ส่งไฟล์ Excel ต้นฉบับขึ้นเซิร์ฟเวอร์ (ส่งเฉพาะยอดสรุปไปเก็บที่ Netlify Blobs) ·
+        อ่านข้อมูลจากป้ายหัวคอลัมน์ ไม่ใช่ตำแหน่งตายตัว · อัปโหลดได้ทั้งปีในครั้งเดียว ระบบแยกเก็บตามเดือนอัตโนมัติ ·
+        การอัปโหลดแต่ละครั้งแทนที่เฉพาะเดือนที่มีอยู่ในไฟล์เท่านั้น เดือนอื่นไม่ถูกแตะต้อง ·
+        ข้อมูลจะอัปเดตให้ทุกคนเห็นภายในไม่กี่นาทีหลังอัปโหลด (ระบบดึงข้อมูลใหม่อัตโนมัติทุก 60 วินาที หรือกดรีเฟรชเพื่อดูทันที)
+      </p>
+      <div id="uploadMsg"></div>
+    </details>
+  </div>
+
+  <!-- quality chips -->
+  <div class="card" id="qualityCard" style="display:none;">
+    <h2>คุณภาพข้อมูล</h2>
+    <div class="chip-row" id="chipRow"></div>
+    <div class="dep-line" id="depLine"></div>
+  </div>
+
+  <!-- drill down -->
+  <div class="card" id="drillCard" style="display:none;">
+    <h2>รายละเอียดยอดขาย (สาขา → หมวดสินค้า → พนักงาน)</h2>
+    <div class="table-controls">
+      <div class="grow"><input type="text" id="searchBox" placeholder="ค้นหารหัส/ชื่อพนักงาน…"></div>
+      <label class="checkbox-row"><input type="checkbox" id="showZeroChk"> แสดงรายการยอด 0</label>
+    </div>
+    <div class="tree" id="treeRoot"></div>
+  </div>
+
+  <div class="footer-note">WinWinPool Commission Dashboard · ข้อมูลอัปเดตอัตโนมัติทุก 1 นาที</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
